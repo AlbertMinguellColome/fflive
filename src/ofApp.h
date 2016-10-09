@@ -56,6 +56,7 @@ public:
     ofxIntSlider  front;
     ofxIntSlider  back;
     ofxIntSlider  meshResolution;
+    ofxIntSlider  pointSize;
     ofxFloatSlider cameraDistance;
     ofxToggle cameraZoom;
     ofxToggle cameraSpin;

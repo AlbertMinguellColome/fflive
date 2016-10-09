@@ -7,6 +7,7 @@ void ofApp::setup() {
     gui.setPosition(0, 250);
     gui.add(front.setup("frontSlider",100,0,1000));
     gui.add(back.setup("backSlider",10,0,200));
+    gui.add(pointSize.setup("pointSize",2,0,100));
     gui.add(meshResolution.setup("meshResolutionSlider",2,1,16));
     gui.add(cameraDistance.setup("cameraDistance",500,300,1000));
     gui.add(cameraZoom.setup("cameraZoom"));
@@ -337,8 +338,9 @@ void ofApp::updateKinectMesh(){
 //--------------------------------------------------------------
 void ofApp::draw() {
     
-    
-
+    ofBackgroundGradient(ofColor(64), ofColor(0));
+    // this makes everything look glowy :)
+    //ofEnableBlendMode(OF_BLENDMODE_ADD);
     ofEnableDepthTest();
     
   if (pointCloudMode) {
@@ -421,7 +423,7 @@ void ofApp::drawPointCloudMode(){
     mesh.setMode(OF_PRIMITIVE_POINTS);
     if (mesh.getVertices().size()) {
         ofPushStyle();
-        glPointSize(2);
+        glPointSize(pointSize);
         cam.begin();
         
         ofDrawAxis(200);
