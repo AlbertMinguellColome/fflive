@@ -9,11 +9,15 @@ void ofApp::setup() {
     gui.add(back.setup("backSlider",10,0,200));
     gui.add(pointSize.setup("pointSize",2,0,100));
     gui.add(meshResolution.setup("meshResolutionSlider",2,1,16));
-    gui.add(cameraDistance.setup("cameraDistance",500,300,1000));
-    gui.add(cameraZoom.setup("cameraZoom"));
-    gui.add(cameraSpin.setup("cameraSpin"));
+    gui.add(meshMode.setup("meshMode",0,1,4));
     gui.add(cubeMapSelector.setup("cubeMapSelector",1,1,4));
+    gui.add(cameraDistance.setup("cameraDistance",500,300,1000));
+    gui.add(cameraZoom.setup("cameraZoom",0,25,25));
+    gui.add(cameraSpin.setup("cameraSpin",0,25,25));
+    gui.add(activateParticles.setup("activateParticles",0,25,25));
+    gui.add(activatePointCloud.setup("activatePointCloud",0,25,25));
     cubeMapSelector.addListener(this, &ofApp::updateCubeMap);
+    meshMode.addListener(this,&ofApp::changeMeshMode);
     
   ofSetLogLevel(OF_LOG_VERBOSE);
   // disable vertical Sync is too bad with light sometimes
@@ -24,7 +28,7 @@ void ofApp::setup() {
   
 
   // Point light = emit light in all directions
-  pointLight.setDiffuseColor(ofColor::white);
+  pointLight.setDiffuseColor(ofColor::blue);
   // specular color = the highlight/shininess color
   pointLight.setSpecularColor(ofColor::white);
   pointLight.setPointLight();
@@ -33,7 +37,7 @@ void ofApp::setup() {
 
   // spotLight = emit a cone of light
   spotLight.setSpotlight();
-  spotLight.setDiffuseColor(ofColor::green);
+  spotLight.setDiffuseColor(ofColor::red);
   spotLight.setSpecularColor(ofColor::white);
   // size of the cone of emitted light, angle between light axis and side of
   // cone
@@ -90,7 +94,7 @@ void ofApp::setup() {
 
   kinect0.start();
   kinectFrameLimiter = 2;
-
+  particleFrameLimiter= 0;
   // Cube map setup
   textureSelector = 0;
 
@@ -120,7 +124,19 @@ void ofApp::update() {
     if(!cameraSpin){updateCamera();};
     
     updateKinectMesh();
-
+    
+    for(unsigned int i = 0; i < p.size(); i++){
+        p[i].update();
+    }
+    
+    ofVec3f meshPosition = mesh.getCentroid();
+    
+    pointLight.setPosition(100, 0, meshPosition.z+600);
+    spotLight.setPosition(0, 100, meshPosition.z+600);
+    spotLight.setOrientation(ofVec3f(-90, 0, 0));
+    directionalLight.setPosition(-100, 0, meshPosition.z+600);
+    directionalLight.setOrientation(ofVec3f(-90, 0, 0));
+    
   }
 
 void ofApp::calcNormals(ofMesh &mesh) {
@@ -153,9 +169,26 @@ void ofApp::calcNormals(ofMesh &mesh) {
 }
 
 void ofApp::updateCubeMap(int &cubeMapSelector){
-    
     changeCubeMapImages(cubeMapSelector, myCubeMap);
-    
+}
+void ofApp::changeMeshMode(int &meshSelector){
+    switch (meshSelector) {
+        case 1:
+            mesh.setMode(OF_PRIMITIVE_POINTS);
+            break;
+        case 2:
+            mesh.setMode(OF_PRIMITIVE_LINES);
+            break;
+        case 3:
+            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            break;
+        case 4:
+            mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+            break;
+            
+        default:
+            break;
+    }
 }
 
 void ofApp::changeCubeMapImages(int textureSelector, ofxCubeMap &myCubeMap) {
@@ -235,6 +268,7 @@ void ofApp::updateKinectMesh(){
     int h = kinect0.getDepthPixelsRef().getHeight();
     int w = kinect0.getDepthPixelsRef().getWidth();
     
+    
     if (kinect0.isFrameNew()) {
         
         if (delayMode) {
@@ -254,6 +288,7 @@ void ofApp::updateKinectMesh(){
             indexs.clear();
             
             {
+                vector<demoParticle> tempParticles;
                 for (int j = 0; j < h; j += step) {
                     vector<ofVec3f> temppoints;
                     vector<ofColor> tempcolors;
@@ -266,14 +301,19 @@ void ofApp::updateKinectMesh(){
                         if (distance > back && distance < front) {
                             ofVec3f tempPoint;
                             ofColor tempColor;
-                            
+                            demoParticle particle;
+                        
                             tempPoint = ofVec3f(i, j, distance *-8);
                             ofColor c;
                             float h = ofMap(distance, 50, 200, 0, 255, true);
                             c.setHsb(h, 255, 255);
                             points[j / step].push_back(tempPoint);
                             colors[j / step].push_back(c);
-                            
+                            particle.setPosition(tempPoint);
+                            particle.setMode(PARTICLE_MODE_NOISE);
+                            particle.reset();
+                            particle.addColor(c);
+                            tempParticles.push_back(particle);
                             total++;
                         } else {
                             ofVec3f tempPoint2;
@@ -284,6 +324,16 @@ void ofApp::updateKinectMesh(){
                             colors[j / step].push_back(tempColor2);
                         }
                     }
+                }
+                
+                if(particleFrameLimiter>2 && activateParticles){
+                    particleFrameLimiter=0;
+                    p.reserve( p.size() + tempParticles.size() );                // preallocate memory without erase
+                    p.insert( p.end(), tempParticles.begin(), tempParticles.end() );
+                    tempParticles.clear();
+
+                }else if(!activateParticles){
+                    p.clear();
                 }
                 
                 int ind = 0;
@@ -330,6 +380,7 @@ void ofApp::updateKinectMesh(){
             }
         }
         kinectFrameLimiter++;
+        particleFrameLimiter++;
     }
 
     
@@ -343,6 +394,12 @@ void ofApp::draw() {
     //ofEnableBlendMode(OF_BLENDMODE_ADD);
     ofEnableDepthTest();
     
+    //if(activatePointCloud){
+        glPointSize(pointSize);
+    //}else{
+        glLineWidth(int(1));
+    //}
+    
   if (pointCloudMode) {
     
       drawPointCloudMode();
@@ -351,43 +408,24 @@ void ofApp::draw() {
     cam.begin();
     if (cubeMapReflection) {
       myCubeMap.bind();
-     //   myCubeMap.drawSkybox( 800 );
       cubeMapShader.begin();
-
       cubeMapShader.setUniform1i("envMap", 0);
       cubeMapShader.setUniform1f("reflectivity", 1.0);
-
       ofPushMatrix();
         ofRotateZ(-180);
         ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
-      //      material.begin();
-      // colorShader.begin();
-      mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-
-      glLineWidth(int(1));
-      mesh.drawFaces();
-      //          material.end();
-      ofPopMatrix();
-
-      cubeMapShader.end();
+        mesh.drawFaces();
+    ofPopMatrix();
+    cubeMapShader.end();
       myCubeMap.unbind();
 
     } else {
       phong.begin();
-
-      // Point cloud mesh
       ofPushMatrix();
-      ofRotateZ(-180);
-      ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
-      //      material.begin();
-      // colorShader.begin();
-      mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-      glLineWidth(int(1));
-      mesh.drawFaces();
-      //          material.end();
+        ofRotateZ(-180);
+        ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
+        mesh.drawFaces();
       ofPopMatrix();
-
-      // sphere.draw();
       phong.end();
         
         ofSetColor(ofColor::black);
@@ -412,6 +450,7 @@ void ofApp::draw() {
   }
     
     ofDisableDepthTest();
+
     
     drawGui();
 
@@ -420,18 +459,31 @@ void ofApp::draw() {
 
 void ofApp::drawPointCloudMode(){
     mesh.setUsage(GL_DYNAMIC_DRAW);
-    mesh.setMode(OF_PRIMITIVE_POINTS);
     if (mesh.getVertices().size()) {
         ofPushStyle();
         glPointSize(pointSize);
         cam.begin();
-        
         ofDrawAxis(200);
         ofPushMatrix();
         ofRotateZ(-180);
         ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
         mesh.draw();
         ofPopMatrix();
+        
+        if(activateParticles){
+            ofPushMatrix();
+            ofRotateZ(-180);
+            ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
+            for(unsigned int i = 0; i < p.size(); i++){
+                //  printf("%f /n",p[i].pos.z);
+                if(p[i].pos.y > 400){
+                    p.erase(p.begin() + i);
+                }else{
+                    p[i].draw();
+                }
+            }
+            ofPopMatrix();
+        }
         cam.end();
         ofPopStyle();
     }

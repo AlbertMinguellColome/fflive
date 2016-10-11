@@ -8,6 +8,7 @@
 #include "MSAFluid.h"
 //#include "MSATimer.h"
 #include "ParticleSystem.h"
+#include "demoParticle.h"
 
 class ofApp : public ofBaseApp{
     
@@ -51,16 +52,20 @@ public:
     
     int textureSelector;
     int kinectFrameLimiter;
+    int particleFrameLimiter;
     
     ofxPanel gui;
     ofxIntSlider  front;
     ofxIntSlider  back;
     ofxIntSlider  meshResolution;
     ofxIntSlider  pointSize;
+    ofxIntSlider  meshMode;
     ofxFloatSlider cameraDistance;
     ofxToggle cameraZoom;
     ofxToggle cameraSpin;
     ofxToggle showSolver;
+    ofxToggle activateParticles;
+    ofxToggle activatePointCloud;
     ofxIntSlider  cubeMapSelector;
     
     
@@ -79,9 +84,14 @@ public:
     ParticleSystem          particleSystem;
     
     ofVec2f                 pMouse;
-//    ofxPanel gui;
-//    ofxIntSlider fluidCellsX2;
-//    ofxButton resizeFluid2;
+
+
+    particleMode currentMode;
+    string currentModeStr;
+    
+    vector <demoParticle> p;
+    vector <ofPoint> attractPoints;
+    vector <ofPoint> attractPointsWithMovement;
 
     
     
@@ -106,6 +116,7 @@ public:
     void updateCamera();
     void updateKinectMesh();
     void updateCubeMap(int &cubeMapSelector);
+    void changeMeshMode(int &meshSelector);
     void changeCubeMapImages(int textureSelector, ofxCubeMap &myCubeMap);
     void strobeLighting();
     void fadeToColor(float r, float g, float b, float speed);
