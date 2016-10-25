@@ -6,7 +6,7 @@
 void ofApp::setup() {
     
     gui.setup();
-    gui.setPosition(0, 250);
+    gui.setPosition(0, 40);
     gui.add(front.setup("frontSlider",10,0,150));
     gui.add(back.setup("backSlider",100,0,1000));
     gui.add(pointSize.setup("pointSize",2,0,100));  // Increase-decrease point size use it with meshMode = 1 (GL_POINTS)
@@ -582,33 +582,8 @@ void ofApp::drawTexturedMode(){
 void ofApp::drawGui(){
     ofSetColor(255, 255, 255);
     if (bShowHelp) {
-        ofDrawBitmapString(
-                           string("Shiny (H) : ") +
-                           (mat.getSpecularColor() == ofFloatColor(1., 1., 1.) ? "yes"
-                            : "no") +
-                           "\n" + "Point Light (1) : " + (bPointLight ? "on" : "off") + "\n" +
-                           "Spot Light On (2) : " + (bSpotLight ? "on" : "off") + "\n" +
-                           "Directional Light On (3) : " + (bDirLight ? "on" : "off") + "\n" +
-                           "Spot Light Cutoff (up/down) : " +
-                           ofToString(spotLight.getSpotlightCutOff(), 0) + "\n" +
-                           "Spot Light Concentration (right/left) : " +
-                           ofToString(spotLight.getSpotConcentration(), 0) + "\n" +
-                           "Shader (S) : " +
-                           (phong.lightingMethod() == ofxShadersFX::Lighting::PHONG_LIGHTING
-                            ? "Phong"
-                            : "Blinn-Phong") +
-                           "\n" + "Shader type (Y) : " +
-                           (phong.shadingMethod() == ofxShadersFX::Lighting::VERTEX_SHADING
-                            ? "Vertex "
-                            : "Pixel ") +
-                           "shader\n" + "Texture (T) : " +
-                           (phong.texture() != NULL ? "on" : "off") + "\n" +
-                           "Sphere Position (Z: z/c) : " + ofToString(sphere.getPosition()) +
-                           "\n" + "FrameRate (Fr) : " + ofToString(ofGetFrameRate()) + "\n" +
-                           + "PointCloud (p) : " + ofToString(pointCloudMode) + "\n" +
-                           + "Delay (d) : " + ofToString(delayMode) + "\n" +
-                           + "reflection map (m) : " + ofToString(cubeMapReflection) + "\n" +
-                           "Show/Hide help (E)",
+        ofDrawBitmapString( "FrameRate (Fr) : " + ofToString(ofGetFrameRate()) + "\n" +
+                           + "Delay (d) : " + ofToString(delayMode) + "\n" ,
                            20, 20);
     }
  
