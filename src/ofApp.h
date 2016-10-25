@@ -10,6 +10,13 @@
 #include "ParticleSystem.h"
 #include "demoParticle.h"
 
+enum meshType
+{
+    pointCloudMesh = 1,
+    cubeMapMesh=2,
+    texturedMesh=3
+};
+
 class ofApp : public ofBaseApp{
     
 public:
@@ -19,6 +26,15 @@ public:
     ofLight pointLight;
     ofLight directionalLight;
     ofLight spotLight;
+    ofLight spotLight45;
+    ofLight spotLight90;
+    ofLight spotLight135;
+    ofLight spotLight180;
+    ofLight spotLight125;
+    ofLight spotLight270;
+    ofLight spotLight315;
+    ofLight spotLight360;
+    
     ofEasyCam cam;
     ofxShadersFX::Lighting::LightingShader phong;
     ofMaterial mat;
@@ -39,9 +55,9 @@ public:
     float camCurrentAngle;
     
     ofImage tex;
-    
     ofxMultiKinectV2 kinect0;
     ofVboMesh mesh;
+    enum meshType meshtype;
     
     vector< vector<ofVec3f> > points;
     vector< vector<ofColor> > colors;
@@ -57,9 +73,12 @@ public:
     ofxPanel gui;
     ofxIntSlider  front;
     ofxIntSlider  back;
-    ofxIntSlider  meshResolution;
     ofxIntSlider  pointSize;
     ofxIntSlider  meshMode;
+    ofxIntSlider  meshResolution;
+    ofxIntSlider  displacement;
+    ofxIntSlider  meshType;
+    ofxIntSlider  cutoff;
     ofxFloatSlider cameraDistance;
     ofxToggle cameraZoom;
     ofxToggle cameraSpin;
@@ -111,15 +130,20 @@ public:
     void calcNormals(ofMesh &mesh);
     void drawGui();
     void drawPointCloudMode();
+    void drawCubeMapMode();
+    void drawTexturedMode();
     void zoomInOutCamera();
     void spinCamera();
     void updateCamera();
     void updateKinectMesh();
     void updateCubeMap(int &cubeMapSelector);
     void changeMeshMode(int &meshSelector);
+    void changeMeshType(int &meshTypeSelector);
     void changeCubeMapImages(int textureSelector, ofxCubeMap &myCubeMap);
     void strobeLighting();
     void fadeToColor(float r, float g, float b, float speed);
     void addToFluid(ofVec2f pos, ofVec2f vel, bool addColor, bool addForce);
+    void positionLights();
+    void setupLights();
     
 };

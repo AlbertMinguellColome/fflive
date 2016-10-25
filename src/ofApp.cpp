@@ -1,23 +1,27 @@
 #include "ofApp.h"
 
+
+
 //--------------------------------------------------------------
 void ofApp::setup() {
     
     gui.setup();
     gui.setPosition(0, 250);
-    gui.add(front.setup("frontSlider",100,0,1000));
-    gui.add(back.setup("backSlider",10,0,200));
-    gui.add(pointSize.setup("pointSize",2,0,100));
-    gui.add(meshResolution.setup("meshResolutionSlider",2,1,16));
-    gui.add(meshMode.setup("meshMode",0,1,4));
-    gui.add(cubeMapSelector.setup("cubeMapSelector",1,1,4));
-    gui.add(cameraDistance.setup("cameraDistance",500,300,1000));
-    gui.add(cameraZoom.setup("cameraZoom",0,25,25));
-    gui.add(cameraSpin.setup("cameraSpin",0,25,25));
-    gui.add(activateParticles.setup("activateParticles",0,25,25));
-    gui.add(activatePointCloud.setup("activatePointCloud",0,25,25));
+    gui.add(front.setup("frontSlider",10,0,150));
+    gui.add(back.setup("backSlider",100,0,1000));
+    gui.add(pointSize.setup("pointSize",2,0,100));  // Increase-decrease point size use it with meshMode = 1 (GL_POINTS)
+    gui.add(meshMode.setup("meshMode",1,1,4));  // It change mesh mode POINTS, LINES ,TRIANGLES = activates delanuay, LINES_LOOP
+    gui.add(meshType.setup("meshType",1,1,3));// Changes between standard pointCloud , CubeMap and Texture mode
+    gui.add(meshResolution.setup("meshResolutionSlider",2,1,16)); //Increase-decrease resolution, use always pair values
+    gui.add(displacement.setup("displacement",6,2,8)); // adjust kinect points Z-postion
+    gui.add(cubeMapSelector.setup("cubeMapSelector",1,1,4));  // Change cube map images use with meshType = 3
+    gui.add(cameraDistance.setup("cameraDistance",500,100,2000));
+    gui.add(cameraZoom.setup("cameraZoom",0,25,25)); // Zoom in-out cam.
+    //gui.add(cameraSpin.setup("cameraSpin",0,25,25));
+    gui.add(activateParticles.setup("activateParticles",0,25,25)); // test with particles to future simulate delays , Atention! Drops FPS if not set higher values of meshResolution
     cubeMapSelector.addListener(this, &ofApp::updateCubeMap);
     meshMode.addListener(this,&ofApp::changeMeshMode);
+    meshType.addListener(this,&ofApp::changeMeshType);
     
   ofSetLogLevel(OF_LOG_VERBOSE);
   // disable vertical Sync is too bad with light sometimes
@@ -25,47 +29,11 @@ void ofApp::setup() {
   ofSetFrameRate(60);
   ofBackground(10, 10, 10);
   ofEnableAntiAliasing();
-  
-
-  // Point light = emit light in all directions
-  pointLight.setDiffuseColor(ofColor::blue);
-  // specular color = the highlight/shininess color
-  pointLight.setSpecularColor(ofColor::white);
-  pointLight.setPointLight();
-  pointLight.setPosition(100, 0, -150);
-  pointLight.setAttenuation(0.0, 0.005);
-
-  // spotLight = emit a cone of light
-  spotLight.setSpotlight();
-  spotLight.setDiffuseColor(ofColor::red);
-  spotLight.setSpecularColor(ofColor::white);
-  // size of the cone of emitted light, angle between light axis and side of
-  // cone
-  // angle range between 0 - 90 in degrees
-  spotLight.setSpotlightCutOff(50);
-  // rate of falloff, illumitation decreases as the angle from the cone axis
-  // increases
-  // range 0 - 128, zero is even illumination, 128 is max falloff
-  spotLight.setSpotConcentration(45);
-  spotLight.setAttenuation(0.0, 0.005);
-  spotLight.setPosition(0, 100, -100);
-  spotLight.setOrientation(ofVec3f(-90, 0, 0));
-
-  // Directional Lights = emit light based on their orientation, regardless of
-  // their position
-  directionalLight.setDiffuseColor(ofColor::blue);
-  directionalLight.setSpecularColor(ofColor::white);
-  directionalLight.setDirectional();
-  directionalLight.setPosition(-100, 0, -140);
-  // set the direction of the light
-  directionalLight.setOrientation(ofVec3f(0, 90, 0));
-
-  // Activate all lights
-  bPointLight = bSpotLight = bDirLight = true;
-  bShowHelp = true;
+    
 
   // High resolution sphere
   ofSetSphereResolution(128);
+    sphere.setRadius(80);
   sphere.setPosition(0, 0, -100);
   test.setPosition(0, 0, -100);
 
@@ -73,12 +41,16 @@ void ofApp::setup() {
   mat.setSpecularColor(ofColor::white);
   mat.setShininess(120);
   ofSetGlobalAmbientColor(ofColor::black);
-
   tex.load("text1.jpg");
 
+    setupLights();
+    
   phong.useLight(&spotLight);
-  phong.useLight(&directionalLight);
-  phong.useLight(&pointLight);
+    phong.useLight(&spotLight90);
+    phong.useLight(&spotLight180);
+    phong.useLight(&spotLight270);
+    phong.useLight(&directionalLight);
+    phong.useLight(&pointLight);
   phong.useMaterial(&mat);
   phong.useCamera(&cam);
   sphere.mapTexCoordsFromTexture(tex.getTexture());
@@ -95,6 +67,8 @@ void ofApp::setup() {
   kinect0.start();
   kinectFrameLimiter = 2;
   particleFrameLimiter= 0;
+    int mode = 1;
+    changeMeshMode(mode);
   // Cube map setup
   textureSelector = 0;
 
@@ -105,11 +79,12 @@ void ofApp::setup() {
 
   cubeMapShader.load("shaders/CubeMap");
 
-  pointCloudMode = true;
   delayMode=false;
     radius=500;
     camCurrentX=0;
     camCurrentY=0;
+    
+    positionLights();
   
     
     glShadeModel(GL_SMOOTH);
@@ -132,8 +107,12 @@ void ofApp::update() {
     ofVec3f meshPosition = mesh.getCentroid();
     
     pointLight.setPosition(100, 0, meshPosition.z+600);
-    spotLight.setPosition(0, 100, meshPosition.z+600);
-    spotLight.setOrientation(ofVec3f(-90, 0, 0));
+    //spotLight.setPosition(0, 100, meshPosition.z+600);
+   // spotLight90.setPosition(0, 100, meshPosition.z+600);
+    spotLight.setOrientation(ofVec3f(-45, 90, 0));
+    spotLight90.setOrientation(ofVec3f(225, 0, 0));
+    spotLight180.setOrientation(ofVec3f(-45, -90, 0));
+    spotLight270.setOrientation(ofVec3f(-45, 0, 0));
     directionalLight.setPosition(-100, 0, meshPosition.z+600);
     directionalLight.setOrientation(ofVec3f(-90, 0, 0));
     
@@ -173,22 +152,31 @@ void ofApp::updateCubeMap(int &cubeMapSelector){
 }
 void ofApp::changeMeshMode(int &meshSelector){
     switch (meshSelector) {
-        case 1:
+        case 1:{
             mesh.setMode(OF_PRIMITIVE_POINTS);
+        }
             break;
-        case 2:
+        case 2:{
             mesh.setMode(OF_PRIMITIVE_LINES);
+        }
             break;
-        case 3:
+        case 3:{
             mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+        }
             break;
-        case 4:
-            mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+        case 4:{
+            mesh.setMode(OF_PRIMITIVE_LINE_LOOP);
+        }
             break;
             
         default:
             break;
     }
+}
+
+void ofApp::changeMeshType(int &meshTypeSelector){
+
+
 }
 
 void ofApp::changeCubeMapImages(int textureSelector, ofxCubeMap &myCubeMap) {
@@ -225,6 +213,100 @@ void ofApp::changeCubeMapImages(int textureSelector, ofxCubeMap &myCubeMap) {
   }
 }
 
+void ofApp::setupLights(){
+    // Point light = emit light in all directions
+    pointLight.setDiffuseColor(ofColor::blue);
+    // specular color = the highlight/shininess color
+    pointLight.setSpecularColor(ofColor::white);
+    pointLight.setPointLight();
+    pointLight.setPosition(100, 0, -150);
+    pointLight.setAttenuation(0.0, 0.005);
+    
+    // spotLight = emit a cone of light
+    spotLight.setSpotlight();
+    spotLight.setDiffuseColor(ofColor::red);
+    spotLight.setSpecularColor(ofColor::white);
+    // size of the cone of emitted light, angle between light axis and side of
+    // cone
+    // angle range between 0 - 90 in degrees
+    spotLight.setSpotlightCutOff(90);
+    // rate of falloff, illumitation decreases as the angle from the cone axis
+    // increases
+    // range 0 - 128, zero is even illumination, 128 is max falloff
+    spotLight.setSpotConcentration(128);
+    spotLight.setAttenuation(0.0, 0.005);
+    spotLight.setPosition(0, 200, -100);
+    spotLight.setOrientation(ofVec3f(0, 90, 0));
+    
+    spotLight90.setSpotlight();
+    spotLight90.setDiffuseColor(ofColor::yellow);
+    spotLight90.setSpecularColor(ofColor::white);
+    spotLight90.setSpotlightCutOff(50);
+    spotLight90.setSpotConcentration(45);
+    spotLight90.setAttenuation(0.0, 0.005);
+    spotLight90.setOrientation(ofVec3f(-45, 0, 0));
+    
+    spotLight180.setSpotlight();
+    spotLight180.setDiffuseColor(ofColor::yellow);
+    spotLight180.setSpecularColor(ofColor::white);
+    spotLight180.setSpotlightCutOff(50);
+    spotLight180.setSpotConcentration(45);
+    spotLight180.setAttenuation(0.0, 0.005);
+    spotLight180.setOrientation(ofVec3f(-45, 0, 0));
+    
+    spotLight270.setSpotlight();
+    spotLight270.setDiffuseColor(ofColor::yellow);
+    spotLight270.setSpecularColor(ofColor::white);
+    spotLight270.setSpotlightCutOff(50);
+    spotLight270.setSpotConcentration(45);
+    spotLight270.setAttenuation(0.0, 0.005);
+    spotLight270.setOrientation(ofVec3f(-45, 0, 0));
+    
+    // Directional Lights = emit light based on their orientation, regardless of
+    // their position
+    directionalLight.setDiffuseColor(ofColor::blue);
+    directionalLight.setSpecularColor(ofColor::white);
+    directionalLight.setDirectional();
+    directionalLight.setPosition(-100, 0, -140);
+    // set the direction of the light
+    directionalLight.setOrientation(ofVec3f(0, 90, 0));
+    
+    // Activate all lights
+    bPointLight=false;
+    bSpotLight = true;
+    bDirLight = false;
+    bShowHelp = true;
+    
+}
+
+void ofApp::positionLights(){
+    
+    float xorig = 0;
+    float zorig = 0;
+    float radius= 200;
+    float x;
+    float z;
+    
+    x = xorig + radius * cos(0 * PI / 180.0);
+    z = zorig + radius * -sin(0 * PI / 180.0);
+    spotLight.setPosition(x, 100, z);
+    x = xorig + radius * cos(45 * PI / 180.0);
+    z = zorig + radius * -sin(45 * PI / 180.0);
+    spotLight45.setPosition(x, 100, z);
+    x = xorig + radius * cos(90 * PI / 180.0);
+    z = zorig + radius * -sin(90 * PI / 180.0);
+    spotLight90.setPosition(x, 100, z);
+    x = xorig + radius * cos(135 * PI / 180.0);
+    z = zorig + radius * -sin(135 * PI / 180.0);
+    spotLight135.setPosition(x, 100, z);
+    x = xorig + radius * cos(180 * PI / 180.0);
+    z = zorig + radius * -sin(180 * PI / 180.0);
+    spotLight180.setPosition(x, 100, z);
+    x = xorig + radius * cos(270 * PI / 180.0);
+    z = zorig + radius * -sin(270 * PI / 180.0);
+    spotLight270.setPosition(x, 100, z);
+    
+}
 void ofApp::zoomInOutCamera(){
     bool upDirection;
     if(radius>=1000){
@@ -298,17 +380,17 @@ void ofApp::updateKinectMesh(){
                     
                     for (int i = 0; i < w; i += step) {
                         float distance = kinect0.getDistanceAt(i, j);
-                        if (distance > back && distance < front) {
+                        if (distance > front && distance < back) {
                             ofVec3f tempPoint;
                             ofColor tempColor;
                             demoParticle particle;
                         
-                            tempPoint = ofVec3f(i, j, distance *-8);
+                            tempPoint = ofVec3f(i, j, distance * -1 *displacement);
                             ofColor c;
                             float h = ofMap(distance, 50, 200, 0, 255, true);
                             c.setHsb(h, 255, 255);
                             points[j / step].push_back(tempPoint);
-                            colors[j / step].push_back(c);
+                            colors[j / step].push_back(ofColor::white);
                             particle.setPosition(tempPoint);
                             particle.setMode(PARTICLE_MODE_NOISE);
                             particle.reset();
@@ -394,66 +476,16 @@ void ofApp::draw() {
     //ofEnableBlendMode(OF_BLENDMODE_ADD);
     ofEnableDepthTest();
     
-    //if(activatePointCloud){
-        glPointSize(pointSize);
-    //}else{
-        glLineWidth(int(1));
-    //}
+    glPointSize(pointSize);
+    glLineWidth(int(1));
     
-  if (pointCloudMode) {
-    
-      drawPointCloudMode();
-
-  } else {
-    cam.begin();
-    if (cubeMapReflection) {
-      myCubeMap.bind();
-      cubeMapShader.begin();
-      cubeMapShader.setUniform1i("envMap", 0);
-      cubeMapShader.setUniform1f("reflectivity", 1.0);
-      ofPushMatrix();
-        ofRotateZ(-180);
-        ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
-        mesh.drawFaces();
-    ofPopMatrix();
-    cubeMapShader.end();
-      myCubeMap.unbind();
-
-    } else {
-      phong.begin();
-      ofPushMatrix();
-        ofRotateZ(-180);
-        ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
-        mesh.drawFaces();
-      ofPopMatrix();
-      phong.end();
-        
-        ofSetColor(ofColor::black);
-        if (bDirLight) {
-            ofSetColor(directionalLight.getDiffuseColor());
-        }
-        directionalLight.draw();
-        ofSetColor(ofColor::black);
-        if (bPointLight) {
-            ofSetColor(pointLight.getDiffuseColor());
-        }
-        pointLight.draw();
-        ofSetColor(ofColor::black);
-        if (bSpotLight) {
-            ofSetColor(spotLight.getDiffuseColor());
-        }
-        spotLight.draw();
-    }
-    
-
-    cam.end();
-  }
+    if(meshType == pointCloudMesh){drawPointCloudMode();};
+    if(meshType == cubeMapMesh){drawCubeMapMode();};
+    if(meshType == texturedMesh){drawTexturedMode();};
     
     ofDisableDepthTest();
-
-    
     drawGui();
-
+    
 }
 
 
@@ -488,6 +520,64 @@ void ofApp::drawPointCloudMode(){
         ofPopStyle();
     }
 }
+
+void ofApp::drawCubeMapMode(){
+    
+    cam.begin();
+    myCubeMap.bind();
+    cubeMapShader.begin();
+    cubeMapShader.setUniform1i("envMap", 0);
+    cubeMapShader.setUniform1f("reflectivity", 1.0);
+    ofPushMatrix();
+    ofRotateZ(-180);
+    ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
+    mesh.drawFaces();
+    ofPopMatrix();
+    cubeMapShader.end();
+    myCubeMap.unbind();
+    cam.end();
+    
+    
+};
+void ofApp::drawTexturedMode(){
+    
+    cam.begin();
+    phong.begin();
+    ofPushMatrix();
+     ofRotateZ(-180);
+      ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
+    mesh.drawFaces();
+    ofDrawAxis(100);
+    //sphere.draw();
+    ofPopMatrix();
+    phong.end();
+    
+    ofSetColor(ofColor::black);
+    if (bDirLight) {
+        ofSetColor(directionalLight.getDiffuseColor());
+    }
+    //directionalLight.draw();
+    ofSetColor(ofColor::black);
+    if (bPointLight) {
+        ofSetColor(pointLight.getDiffuseColor());
+    }
+    //  pointLight.draw();
+    ofSetColor(ofColor::black);
+    if (bSpotLight) {
+        ofSetColor(spotLight.getDiffuseColor());
+    }
+    spotLight.draw();
+    ofSetColor(spotLight90.getDiffuseColor());
+    spotLight90.draw();
+    ofSetColor(spotLight180.getDiffuseColor());
+    spotLight180.draw();
+    ofSetColor(spotLight270.getDiffuseColor());
+    spotLight270.draw();
+    cam.end();
+    
+    
+    
+};
 
 void ofApp::drawGui(){
     ofSetColor(255, 255, 255);
