@@ -7,7 +7,7 @@ void ofApp::setup() {
     
     gui.setup();
     gui.setPosition(0, 40);
-    gui.add(ZFilterMesh.setup("ZFilterMesh",0,0,30));
+    gui.add(ZFilterMesh.setup("ZFilterMesh",1,0,10));
     gui.add(front.setup("frontSlider",10,0,150));
     gui.add(back.setup("backSlider",100,0,1000));
     gui.add(pointSize.setup("pointSize",2,0,100));  // Increase-decrease point size use it with meshMode = 1 (GL_POINTS)
@@ -18,6 +18,7 @@ void ofApp::setup() {
     gui.add(cubeMapSelector.setup("cubeMapSelector",1,1,4));  // Change cube map images use with meshType = 3
     gui.add(cameraDistance.setup("cameraDistance",500,100,2000));
     gui.add(cameraZoom.setup("cameraZoom",0,25,25)); // Zoom in-out cam.
+    gui.add(lightStrobeFrequency.setup("lightStrobeFrequency",3,0,25));
     //gui.add(cameraSpin.setup("cameraSpin",0,25,25));
     gui.add(activateParticles.setup("activateParticles",0,25,25)); // test with particles to future simulate delays , Atention! Drops FPS if not set higher values of meshResolution
     cubeMapSelector.addListener(this, &ofApp::updateCubeMap);
@@ -41,20 +42,8 @@ void ofApp::setup() {
   // Shiny material
   mat.setSpecularColor(ofColor::white);
   mat.setShininess(120);
-  ofSetGlobalAmbientColor(ofColor::black);
+  //ofSetGlobalAmbientColor(ofColor::black);
   tex.load("text1.jpg");
-
-    setupLights();
-    
-  phong.useLight(&spotLight);
-    phong.useLight(&spotLight90);
-    phong.useLight(&spotLight180);
-    phong.useLight(&spotLight270);
-    phong.useLight(&directionalLight);
-    phong.useLight(&pointLight);
-  phong.useMaterial(&mat);
-  phong.useCamera(&cam);
-  sphere.mapTexCoordsFromTexture(tex.getTexture());
 
   // kinect setup
 
@@ -85,7 +74,18 @@ void ofApp::setup() {
     camCurrentX=0;
     camCurrentY=0;
     
+    setupLights();
+    phong.useLight(&spotLight);
+    phong.useLight(&spotLight90);
+    phong.useLight(&spotLight180);
+    phong.useLight(&spotLight270);
+    //    phong.useLight(&directionalLight);
+   // phong.useLight(&pointLight);
+    phong.useMaterial(&mat);
+    phong.useCamera(&cam);
+    sphere.mapTexCoordsFromTexture(tex.getTexture());
     positionLights();
+    
   
     
     glShadeModel(GL_SMOOTH);
@@ -101,21 +101,11 @@ void ofApp::update() {
     
     updateKinectMesh();
     
+    // Particle update -> TODO move to method
     for(unsigned int i = 0; i < p.size(); i++){
         p[i].update();
     }
     
-    ofVec3f meshPosition = mesh.getCentroid();
-    
-    pointLight.setPosition(100, 0, meshPosition.z+600);
-    //spotLight.setPosition(0, 100, meshPosition.z+600);
-   // spotLight90.setPosition(0, 100, meshPosition.z+600);
-    spotLight.setOrientation(ofVec3f(-45, 90, 0));
-    spotLight90.setOrientation(ofVec3f(225, 0, 0));
-    spotLight180.setOrientation(ofVec3f(-45, -90, 0));
-    spotLight270.setOrientation(ofVec3f(-45, 0, 0));
-    directionalLight.setPosition(-100, 0, meshPosition.z+600);
-    directionalLight.setOrientation(ofVec3f(-90, 0, 0));
     
   }
 
@@ -214,6 +204,19 @@ void ofApp::changeCubeMapImages(int textureSelector, ofxCubeMap &myCubeMap) {
   }
 }
 
+void ofApp::updateLights(){
+    ofVec3f meshPosition = mesh.getCentroid();
+    
+    pointLight.setPosition(100, 0, meshPosition.z+600);
+    //spotLight.setPosition(0, 100, meshPosition.z+600);
+    // spotLight90.setPosition(0, 100, meshPosition.z+600);
+    spotLight.setPosition(spotLight.getPosition().x,spotLight.getPosition().y, meshPosition.z+600);
+    spotLight90.setPosition(spotLight90.getPosition().x,spotLight90.getPosition().y, meshPosition.z+600-200);
+    spotLight180.setPosition(spotLight180.getPosition().x,spotLight180.getPosition().y, meshPosition.z+600);
+    spotLight270.setPosition(spotLight270.getPosition().x,spotLight270.getPosition().y, meshPosition.z+600+200);
+    directionalLight.setPosition(-100, 0, meshPosition.z+600);
+    directionalLight.setOrientation(ofVec3f(-90, 0, 0));
+}
 void ofApp::setupLights(){
     // Point light = emit light in all directions
     pointLight.setDiffuseColor(ofColor::blue);
@@ -225,7 +228,7 @@ void ofApp::setupLights(){
     
     // spotLight = emit a cone of light
     spotLight.setSpotlight();
-    spotLight.setDiffuseColor(ofColor::red);
+    spotLight.setDiffuseColor(ofColor::white);
     spotLight.setSpecularColor(ofColor::white);
     // size of the cone of emitted light, angle between light axis and side of
     // cone
@@ -237,46 +240,53 @@ void ofApp::setupLights(){
     spotLight.setSpotConcentration(128);
     spotLight.setAttenuation(0.0, 0.005);
     spotLight.setPosition(0, 200, -100);
-    spotLight.setOrientation(ofVec3f(0, 90, 0));
+
     
     spotLight90.setSpotlight();
-    spotLight90.setDiffuseColor(ofColor::yellow);
+    spotLight90.setDiffuseColor(ofColor::white);
     spotLight90.setSpecularColor(ofColor::white);
     spotLight90.setSpotlightCutOff(50);
     spotLight90.setSpotConcentration(45);
     spotLight90.setAttenuation(0.0, 0.005);
-    spotLight90.setOrientation(ofVec3f(-45, 0, 0));
     
     spotLight180.setSpotlight();
-    spotLight180.setDiffuseColor(ofColor::yellow);
+    spotLight180.setDiffuseColor(ofColor::white);
     spotLight180.setSpecularColor(ofColor::white);
     spotLight180.setSpotlightCutOff(50);
     spotLight180.setSpotConcentration(45);
     spotLight180.setAttenuation(0.0, 0.005);
-    spotLight180.setOrientation(ofVec3f(-45, 0, 0));
     
     spotLight270.setSpotlight();
-    spotLight270.setDiffuseColor(ofColor::yellow);
+    spotLight270.setDiffuseColor(ofColor::white);
     spotLight270.setSpecularColor(ofColor::white);
     spotLight270.setSpotlightCutOff(50);
     spotLight270.setSpotConcentration(45);
     spotLight270.setAttenuation(0.0, 0.005);
-    spotLight270.setOrientation(ofVec3f(-45, 0, 0));
     
     // Directional Lights = emit light based on their orientation, regardless of
     // their position
-    directionalLight.setDiffuseColor(ofColor::blue);
+    directionalLight.setDiffuseColor(ofColor::white);
     directionalLight.setSpecularColor(ofColor::white);
     directionalLight.setDirectional();
     directionalLight.setPosition(-100, 0, -140);
     // set the direction of the light
     directionalLight.setOrientation(ofVec3f(0, 90, 0));
     
+    //Orientation
+    spotLight.setOrientation(ofVec3f(-45, 90, 0));
+    spotLight90.setOrientation(ofVec3f(225, 0, 0));
+    spotLight180.setOrientation(ofVec3f(-45, -90, 0));
+    spotLight270.setOrientation(ofVec3f(-45, 0, 0));
+    
     // Activate all lights
     bPointLight=false;
-    bSpotLight = true;
+    bSpotLight = false;
+    bSpotLight90 = false;
+    bSpotLight180 = false;
+    bSpotLight270 = false;
+    bSpotLight = false;
     bDirLight = false;
-    bShowHelp = true;
+    bShowHelp = false;
     
 }
 
@@ -306,8 +316,31 @@ void ofApp::positionLights(){
     x = xorig + radius * cos(270 * PI / 180.0);
     z = zorig + radius * -sin(270 * PI / 180.0);
     spotLight270.setPosition(x, 100, z);
-    
 }
+
+void ofApp::strobeLights(){
+    float frequency= lightStrobeFrequency;
+    float angle = ofGetElapsedTimef()*2;
+    float phase=0;
+    float phase90=90 * M_PI/180;
+    float phase180=180 * M_PI/180;
+    float phase270=279 * M_PI/180;
+    float y = sin(2*M_PI*frequency*ofGetElapsedTimef()+phase);
+    float y90 = sin(2*M_PI*frequency*ofGetElapsedTimef()+phase90);
+    float y180 = sin(2*M_PI*frequency*ofGetElapsedTimef()+phase180);
+    float y270 = sin(2*M_PI*frequency*ofGetElapsedTimef()+phase270);
+
+    if (y>0) {phong.useLight(&spotLight);bSpotLight=true;}else{phong.removeLight(&spotLight);bSpotLight=false;};
+    if (y90>0) {phong.useLight(&spotLight90);}else{phong.removeLight(&spotLight90);};
+    if (y180>0) {phong.useLight(&spotLight180);}else{phong.removeLight(&spotLight180);};
+    if (y270>0) {phong.useLight(&spotLight270);}else{phong.removeLight(&spotLight270);};
+    if(frequency==0){
+        phong.removeLight(&spotLight);
+        phong.removeLight(&spotLight90);
+        phong.removeLight(&spotLight180);
+        phong.removeLight(&spotLight270);
+    }
+    }
 void ofApp::zoomInOutCamera(){
     bool upDirection;
     if(radius>=1000){
@@ -499,7 +532,7 @@ void ofApp::updateKinectMesh(){
 //--------------------------------------------------------------
 void ofApp::draw() {
     
-    ofBackgroundGradient(ofColor(64), ofColor(0));
+  //  ofBackgroundGradient(ofColor(64), ofColor(0));
     // this makes everything look glowy :)
     //ofEnableBlendMode(OF_BLENDMODE_ADD);
     ofEnableDepthTest();
@@ -568,6 +601,9 @@ void ofApp::drawCubeMapMode(){
     
 };
 void ofApp::drawTexturedMode(){
+    
+    updateLights();
+    strobeLights();
     
     cam.begin();
     phong.begin();
@@ -737,7 +773,11 @@ void ofApp::keyPressed(int key) {
     pos[2] -= 5;
     sphere.setPosition(pos);
     break;
+    case 32:
+    ofToggleFullscreen();
+    break;
   }
+    
 }
 
 #pragma mark - camera tweens

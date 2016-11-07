@@ -40,6 +40,9 @@ public:
     ofMaterial mat;
     bool bPointLight;
     bool bSpotLight;
+    bool bSpotLight90;
+    bool bSpotLight180;
+    bool bSpotLight270;
     bool bDirLight;
     bool bShowHelp;
     bool cubeMapReflection;
@@ -79,6 +82,7 @@ public:
     ofxIntSlider  displacement;
     ofxIntSlider  meshType;
     ofxIntSlider  cutoff;
+    ofxIntSlider  lightStrobeFrequency;
     ofxFloatSlider cameraDistance;
     ofxFloatSlider ZFilterMesh;
     ofxToggle cameraZoom;
@@ -146,5 +150,7 @@ public:
     void addToFluid(ofVec2f pos, ofVec2f vel, bool addColor, bool addForce);
     void positionLights();
     void setupLights();
+    void updateLights();
+    void strobeLights();
     
 };
