@@ -7,6 +7,7 @@ void ofApp::setup() {
     
     gui.setup();
     gui.setPosition(0, 40);
+    gui.add(ZFilterMesh.setup("ZFilterMesh",0,0,30));
     gui.add(front.setup("frontSlider",10,0,150));
     gui.add(back.setup("backSlider",100,0,1000));
     gui.add(pointSize.setup("pointSize",2,0,100));  // Increase-decrease point size use it with meshMode = 1 (GL_POINTS)
@@ -380,7 +381,33 @@ void ofApp::updateKinectMesh(){
                     
                     for (int i = 0; i < w; i += step) {
                         float distance = kinect0.getDistanceAt(i, j);
+                        float previous_distance;
+                        float next_distance;
+                        float up_distance;
+                        float down_distance;
+                        float z_difference;
+                        if(i>0){
+                            previous_distance = kinect0.getDistanceAt(i-1, j);
+                            next_distance = kinect0.getDistanceAt(i+1, j);
+                            if(j>0){
+                                up_distance = kinect0.getDistanceAt(i, j);
+                                down_distance = kinect0.getDistanceAt(i-1, j);
+                                z_difference= (std::abs(distance-previous_distance) + std::abs(distance-next_distance) + std::abs(distance-up_distance)+std::abs(distance-down_distance))/4;
+                            }else{
+                                z_difference= (std::abs(distance-previous_distance) + std::abs(distance-next_distance))/2;
+                            }
+                        }
                         if (distance > front && distance < back) {
+                            
+                            if(z_difference >= ZFilterMesh){
+                                ofVec3f tempPoint2;
+                                ofColor tempColor2;
+                                tempPoint2 = ofVec3f(i, j, 0);
+                                tempColor2 = ofColor(ofColor::yellow);
+                                points[j / step].push_back(tempPoint2);
+                                colors[j / step].push_back(tempColor2);
+                                
+                            }else{
                             ofVec3f tempPoint;
                             ofColor tempColor;
                             demoParticle particle;
@@ -397,6 +424,7 @@ void ofApp::updateKinectMesh(){
                             particle.addColor(c);
                             tempParticles.push_back(particle);
                             total++;
+                            }
                         } else {
                             ofVec3f tempPoint2;
                             ofColor tempColor2;

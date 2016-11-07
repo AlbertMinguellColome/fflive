@@ -175,6 +175,7 @@ void demoParticle::draw(){
 }
 
 void demoParticle::setPosition(ofVec3f point){
+    frc=point;
     
 }
 void demoParticle::addColor (ofColor color){

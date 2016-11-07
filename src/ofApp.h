@@ -80,6 +80,7 @@ public:
     ofxIntSlider  meshType;
     ofxIntSlider  cutoff;
     ofxFloatSlider cameraDistance;
+    ofxFloatSlider ZFilterMesh;
     ofxToggle cameraZoom;
     ofxToggle cameraSpin;
     ofxToggle showSolver;
