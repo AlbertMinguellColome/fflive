@@ -1,16 +1,18 @@
 {
-  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "3979E829A402EA99CEFDEC7ECDC6E8837B998D47",
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "7BDDC0B20A9C89BC624905BB1B93840D7A335637",
   "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
 
   },
   "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
-    "1E4AC4923E51656F55BFCF32D715CA7692238552" : 0,
-    "3979E829A402EA99CEFDEC7ECDC6E8837B998D47" : 0
+    "3979E829A402EA99CEFDEC7ECDC6E8837B998D47" : 0,
+    "7BDDC0B20A9C89BC624905BB1B93840D7A335637" : 9223372036854775807,
+    "1E4AC4923E51656F55BFCF32D715CA7692238552" : 0
   },
   "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "8FE9BA8C-F5ED-45AD-A611-9A9EEADFE2F8",
   "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
-    "1E4AC4923E51656F55BFCF32D715CA7692238552" : "..\/..",
-    "3979E829A402EA99CEFDEC7ECDC6E8837B998D47" : "LightsAndMeshes\/"
+    "3979E829A402EA99CEFDEC7ECDC6E8837B998D47" : "LightsAndMeshes\/",
+    "7BDDC0B20A9C89BC624905BB1B93840D7A335637" : "ffliveDefault\/",
+    "1E4AC4923E51656F55BFCF32D715CA7692238552" : "..\/.."
   },
   "DVTSourceControlWorkspaceBlueprintNameKey" : "LightsAndMeshes",
   "DVTSourceControlWorkspaceBlueprintVersion" : 204,
@@ -25,6 +27,11 @@
       "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/AlbertMinCol\/LightsAndMeshes.git",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "3979E829A402EA99CEFDEC7ECDC6E8837B998D47"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/AlbertMinguellColome\/fflive.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "7BDDC0B20A9C89BC624905BB1B93840D7A335637"
     }
   ]
 }
