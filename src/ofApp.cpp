@@ -18,6 +18,7 @@ void ofApp::setup() {
     gui.add(cubeMapSelector.setup("cubeMapSelector",1,1,4));  // Change cube map images use with meshType = 3
     gui.add(cameraDistance.setup("cameraDistance",500,100,2000));
     gui.add(cameraZoom.setup("cameraZoom",0,25,25)); // Zoom in-out cam.
+    gui.add(activateLightStrobe.setup("activateLightStrobe",0,25,25));
     gui.add(lightStrobeFrequency.setup("lightStrobeFrequency",3,0,25));
     //gui.add(cameraSpin.setup("cameraSpin",0,25,25));
     gui.add(activateParticles.setup("activateParticles",0,25,25)); // test with particles to future simulate delays , Atention! Drops FPS if not set higher values of meshResolution
@@ -75,10 +76,10 @@ void ofApp::setup() {
     camCurrentY=0;
     
     setupLights();
-    phong.useLight(&spotLight);
-    phong.useLight(&spotLight90);
-    phong.useLight(&spotLight180);
-    phong.useLight(&spotLight270);
+//    phong.useLight(&spotLight);
+//    phong.useLight(&spotLight90);
+//    phong.useLight(&spotLight180);
+//    phong.useLight(&spotLight270);
     //    phong.useLight(&directionalLight);
    // phong.useLight(&pointLight);
     phong.useMaterial(&mat);
@@ -300,25 +301,32 @@ void ofApp::positionLights(){
     
     x = xorig + radius * cos(0 * PI / 180.0);
     z = zorig + radius * -sin(0 * PI / 180.0);
-    spotLight.setPosition(x, 100, z);
+    spotLight.setPosition(x, 200, z);
     x = xorig + radius * cos(45 * PI / 180.0);
     z = zorig + radius * -sin(45 * PI / 180.0);
-    spotLight45.setPosition(x, 100, z);
+    spotLight45.setPosition(x, 200, z);
     x = xorig + radius * cos(90 * PI / 180.0);
     z = zorig + radius * -sin(90 * PI / 180.0);
-    spotLight90.setPosition(x, 100, z);
+    spotLight90.setPosition(x, 200, z);
     x = xorig + radius * cos(135 * PI / 180.0);
     z = zorig + radius * -sin(135 * PI / 180.0);
-    spotLight135.setPosition(x, 100, z);
+    spotLight135.setPosition(x, 200, z);
     x = xorig + radius * cos(180 * PI / 180.0);
     z = zorig + radius * -sin(180 * PI / 180.0);
-    spotLight180.setPosition(x, 100, z);
+    spotLight180.setPosition(x, 200, z);
     x = xorig + radius * cos(270 * PI / 180.0);
     z = zorig + radius * -sin(270 * PI / 180.0);
-    spotLight270.setPosition(x, 100, z);
+    spotLight270.setPosition(x, 200, z);
 }
 
 void ofApp::strobeLights(){
+    if(!activateLightStrobe){
+        phong.useLight(&spotLight);
+        phong.useLight(&spotLight90);
+        phong.useLight(&spotLight180);
+        phong.useLight(&spotLight270);
+        return;
+    }
     float frequency= lightStrobeFrequency;
     float angle = ofGetElapsedTimef()*2;
     float phase=0;
@@ -330,10 +338,41 @@ void ofApp::strobeLights(){
     float y180 = sin(2*M_PI*frequency*ofGetElapsedTimef()+phase180);
     float y270 = sin(2*M_PI*frequency*ofGetElapsedTimef()+phase270);
 
-    if (y>0) {phong.useLight(&spotLight);bSpotLight=true;}else{phong.removeLight(&spotLight);bSpotLight=false;};
-    if (y90>0) {phong.useLight(&spotLight90);}else{phong.removeLight(&spotLight90);};
-    if (y180>0) {phong.useLight(&spotLight180);}else{phong.removeLight(&spotLight180);};
-    if (y270>0) {phong.useLight(&spotLight270);}else{phong.removeLight(&spotLight270);};
+    if (y>0 && bSpotLight==false) {
+        phong.useLight(&spotLight);
+        bSpotLight=true;
+    }else if(bSpotLight==true){
+        phong.removeLight(&spotLight);
+        bSpotLight=false;
+    };
+    if (y90>0 && bSpotLight90==false) {
+        phong.useLight(&spotLight90);
+        bSpotLight90=true;
+    }else if(bSpotLight90==true){
+        phong.removeLight(&spotLight90);
+        bSpotLight90=false;
+    }
+    if (y180>0 && bSpotLight180==false) {
+        phong.useLight(&spotLight180);
+        bSpotLight180=true;
+    }else if(bSpotLight180==true){
+        phong.removeLight(&spotLight180);
+        bSpotLight180=false;
+    }
+    if (y270>0 && bSpotLight270==false) {
+        phong.useLight(&spotLight270);
+        bSpotLight270=true;
+    }else if(bSpotLight270==true){
+        phong.removeLight(&spotLight270);
+        bSpotLight270=false;
+    }
+//    if (y90>0) {
+//        phong.useLight(&spotLight90);
+//    }else{
+//        phong.removeLight(&spotLight90);
+//    };
+//    if (y180>0) {phong.useLight(&spotLight180);}else{phong.removeLight(&spotLight180);};
+//    if (y270>0) {phong.useLight(&spotLight270);}else{phong.removeLight(&spotLight270);};
     if(frequency==0){
         phong.removeLight(&spotLight);
         phong.removeLight(&spotLight90);

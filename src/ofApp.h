@@ -90,6 +90,7 @@ public:
     ofxToggle showSolver;
     ofxToggle activateParticles;
     ofxToggle activatePointCloud;
+    ofxToggle activateLightStrobe;
     ofxIntSlider  cubeMapSelector;
     
     
