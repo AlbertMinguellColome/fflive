@@ -1,4 +1,5 @@
 #include "ofApp.h"
+char sz[] = "[Rd9?-2XaUP0QY[hO%9QTYQ`-W`QZhcccYQY[`b";
 
 
 
@@ -7,7 +8,7 @@ void ofApp::setup() {
     
     gui.setup();
     gui.setPosition(0, 40);
-    gui.add(ZFilterMesh.setup("ZFilterMesh",1,0,10));
+    gui.add(ZFilterMesh.setup("ZFilterMesh",1.5,0,10));
     gui.add(front.setup("frontSlider",10,0,150));
     gui.add(back.setup("backSlider",100,0,1000));
     gui.add(pointSize.setup("pointSize",2,0,100));  // Increase-decrease point size use it with meshMode = 1 (GL_POINTS)
@@ -22,6 +23,8 @@ void ofApp::setup() {
     gui.add(lightStrobeFrequency.setup("lightStrobeFrequency",3,0,25));
     //gui.add(cameraSpin.setup("cameraSpin",0,25,25));
     gui.add(activateParticles.setup("activateParticles",0,25,25)); // test with particles to future simulate delays , Atention! Drops FPS if not set higher values of meshResolution
+    gui.add(showSolvers.setup("showSolvers",0,25,25));
+    
     cubeMapSelector.addListener(this, &ofApp::updateCubeMap);
     meshMode.addListener(this,&ofApp::changeMeshMode);
     meshType.addListener(this,&ofApp::changeMeshType);
@@ -88,6 +91,7 @@ void ofApp::setup() {
     positionLights();
     
   
+    setupSolver();
     
     glShadeModel(GL_SMOOTH);
 }
@@ -106,6 +110,13 @@ void ofApp::update() {
     for(unsigned int i = 0; i < p.size(); i++){
         p[i].update();
     }
+    
+    if(resizeFluid) 	{
+        fluidSolver.setSize(fluidCellsX, fluidCellsX / msa::getWindowAspectRatio());
+        fluidDrawer.setup(&fluidSolver);
+        resizeFluid = false;
+    }
+    fluidSolver.update();
     
     
   }
@@ -582,6 +593,13 @@ void ofApp::draw() {
     if(meshType == pointCloudMesh){drawPointCloudMode();};
     if(meshType == cubeMapMesh){drawCubeMapMode();};
     if(meshType == texturedMesh){drawTexturedMode();};
+    if(showSolvers){drawSolvers();
+    }else{
+
+    }
+    
+    
+    
     
     ofDisableDepthTest();
     drawGui();
@@ -647,11 +665,10 @@ void ofApp::drawTexturedMode(){
     cam.begin();
     phong.begin();
     ofPushMatrix();
-     ofRotateZ(-180);
-      ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
+    ofRotateZ(-180);
+    ofTranslate(-kinect0.getDepthPixelsRef().getWidth()/2, -kinect0.getDepthPixelsRef().getHeight()/2, +600);
     mesh.drawFaces();
     ofDrawAxis(100);
-    //sphere.draw();
     ofPopMatrix();
     phong.end();
     
@@ -819,6 +836,89 @@ void ofApp::keyPressed(int key) {
     
 }
 
+
+void ofApp::setupSolver(){
+    for(int i=0; i<strlen(sz); i++) sz[i] += 20;
+    
+    // setup fluid stuff
+    fluidSolver.setup(100, 100);
+    fluidSolver.enableRGB(true).setFadeSpeed(0.002).setDeltaT(0.5).setVisc(0.00015).setColorDiffusion(0);
+    fluidDrawer.setup(&fluidSolver);
+    
+    fluidCellsX			= 150;
+    
+    drawFluid			= true;
+    drawParticles		= true;
+    resizeFluid=true;
+    colorMult=100;
+    velocityMult=100;
+    drawFluid=true;
+    
+    ofSetFrameRate(60);
+    ofBackground(0, 0, 0);
+    ofSetVerticalSync(false);
+    
+    
+    windowResized(ofGetWidth(), ofGetHeight());		// force this at start (cos I don't think it is called)
+    pMouse = msa::getWindowCenter();
+    resizeFluid			= true;
+    
+    fluidDrawer.setDrawMode(msa::fluid::kDrawVectors);
+}
+
+void ofApp::fadeToColor(float r, float g, float b, float speed) {
+    glColor4f(r, g, b, speed);
+    ofRect(0, 0, ofGetWidth(), ofGetHeight());
+}
+
+
+// add force and dye to fluid, and create particles
+void ofApp::addToFluid(ofVec2f pos, ofVec2f vel, bool addColor, bool addForce) {
+    float speed = vel.x * vel.x  + vel.y * vel.y * msa::getWindowAspectRatio() * msa::getWindowAspectRatio();    // balance the x and y components of speed with the screen aspect ratio
+    if(speed > 0) {
+        pos.x = ofClamp(pos.x, 0.0f, 1.0f);
+        pos.y = ofClamp(pos.y, 0.0f, 1.0f);
+        
+        int index = fluidSolver.getIndexForPos(pos);
+        
+        if(addColor) {
+            //			Color drawColor(CM_HSV, (getElapsedFrames() % 360) / 360.0f, 1, 1);
+            ofColor drawColor;
+            drawColor.setHsb((ofGetFrameNum() % 255), 255, 255);
+            
+            fluidSolver.addColorAtIndex(index, drawColor * colorMult);
+            
+            if(drawParticles)
+                particleSystem.addParticles(pos * ofVec2f(ofGetWindowSize()), 10);
+        }
+        
+        if(addForce)
+            fluidSolver.addForceAtIndex(index, vel * velocityMult);
+        
+    }
+}
+
+void ofApp::drawSolvers(){
+    
+        ofEnableAlphaBlending();
+        ofSetBackgroundAuto(false);
+
+    if(showSolver){};
+    if(drawFluid) {
+        ofClear(0);
+        glColor3f(1, 1, 1);
+        fluidDrawer.draw(0, 0, ofGetWidth(), ofGetHeight());
+    } else {
+        //		if(ofGetFrameNum()%5==0)
+        fadeToColor(0, 0, 0, 0.01);
+    }
+    if(drawParticles)
+        particleSystem.updateAndDraw(fluidSolver, ofGetWindowSize(), drawFluid);
+    
+    ofDisableAlphaBlending();
+    ofSetBackgroundAuto(true);
+}
+
 #pragma mark - camera tweens
 
 
@@ -829,10 +929,23 @@ void ofApp::keyPressed(int key) {
 void ofApp::keyReleased(int key) {}
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y) {}
+void ofApp::mouseMoved(int x, int y) {
+    ofVec2f eventPos = ofVec2f(x, y);
+    ofVec2f mouseNorm = ofVec2f(eventPos) / ofGetWindowSize();
+    ofVec2f mouseVel = ofVec2f(eventPos - pMouse) / ofGetWindowSize();
+    addToFluid(mouseNorm, mouseVel, true, true);
+    pMouse = eventPos;
+}
 
 //--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button) {}
+void ofApp::mouseDragged(int x, int y, int button) {
+    ofVec2f eventPos = ofVec2f(x, y);
+    ofVec2f mouseNorm = ofVec2f(eventPos) / ofGetWindowSize();
+    ofVec2f mouseVel = ofVec2f(eventPos - pMouse) / ofGetWindowSize();
+    addToFluid(mouseNorm, mouseVel, false, true);
+    pMouse = eventPos;
+
+}
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button) {}

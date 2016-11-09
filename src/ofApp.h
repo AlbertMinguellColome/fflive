@@ -85,6 +85,7 @@ public:
     ofxIntSlider  lightStrobeFrequency;
     ofxFloatSlider cameraDistance;
     ofxFloatSlider ZFilterMesh;
+    ofxToggle showSolvers;
     ofxToggle cameraZoom;
     ofxToggle cameraSpin;
     ofxToggle showSolver;
@@ -102,13 +103,13 @@ public:
     bool                    resizeFluid;
     bool                    drawFluid;
     bool                    drawParticles;
-    
+    ofVec2f                 pMouse;
     msa::fluid::Solver      fluidSolver;
     msa::fluid::DrawerGl	fluidDrawer;
     
+    
     ParticleSystem          particleSystem;
     
-    ofVec2f                 pMouse;
 
 
     particleMode currentMode;
@@ -147,11 +148,15 @@ public:
     void changeMeshType(int &meshTypeSelector);
     void changeCubeMapImages(int textureSelector, ofxCubeMap &myCubeMap);
     void strobeLighting();
-    void fadeToColor(float r, float g, float b, float speed);
-    void addToFluid(ofVec2f pos, ofVec2f vel, bool addColor, bool addForce);
+   
     void positionLights();
     void setupLights();
     void updateLights();
     void strobeLights();
     
+    //Solver
+    void setupSolver();
+    void fadeToColor(float r, float g, float b, float speed);
+    void addToFluid(ofVec2f pos, ofVec2f vel, bool addColor, bool addForce);
+    void drawSolvers();
 };
