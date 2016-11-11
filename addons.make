@@ -1,9 +1,11 @@
 ofxCubeMap
 ofxFlowTools
 ofxGui
+ofxJSON
 ofxMSACore
 ofxMSAFluid
 ofxMultiKinectV2
 ofxOpenCv
+ofxOsc
 ofxShadersFX
 ofxTurboJpeg

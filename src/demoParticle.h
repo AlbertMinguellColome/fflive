@@ -20,7 +20,7 @@ class demoParticle{
 		void update();
 		void draw();		
 		
-		ofPoint pos;
+		ofVec3f pos;
 		ofPoint vel;
 		ofPoint frc;
 		
